@@ -27,7 +27,7 @@ export type CompanionCommentSource =
   | "current_context"
   | "manual_save";
 
-export const NOVEL_SEGMENTATION_VERSION = 2;
+export const NOVEL_SEGMENTATION_VERSION = 3;
 export const MAX_RECENT_COMPANION_COMMENTS = 20;
 export const MAX_HISTORY_COMPANION_COMMENTS = 500;
 

@@ -30,14 +30,14 @@ describe("source manifests", () => {
     expect(changedWhitespace.contentHash).not.toBe(lf.contentHash);
   });
 
-  it("uses final split count and segmentation version one", async () => {
+  it("uses merged reading-unit count and the current segmentation version", async () => {
     const manifest = await createNovelSourceManifest({
       sourceId: "source-1",
       sourceKind: "file_import",
       sourceText: "第一段。\n\n第二段。\n\n第三段。"
     });
 
-    expect(manifest.paragraphCount).toBe(3);
+    expect(manifest.paragraphCount).toBe(1);
     expect(manifest.segmentationVersion).toBe(NOVEL_SEGMENTATION_VERSION);
     expect(manifest.contentHash).toMatch(/^[a-f0-9]{64}$/);
   });

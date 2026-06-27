@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import {
   NOVEL_SEGMENTATION_VERSION,
   splitNovelText,
-  splitNovelTextLegacy,
+  splitNovelTextForVersion,
   type SourceKind,
   type SourceManifest
 } from "@ss/shared";
@@ -292,10 +292,7 @@ function countNovelParagraphsForManifest(
   sourceText: string,
   sourceManifest: SourceManifest
 ): number {
-  if (sourceManifest.segmentationVersion < NOVEL_SEGMENTATION_VERSION) {
-    return splitNovelTextLegacy(sourceText).length;
-  }
-  return splitNovelText(sourceText).length;
+  return splitNovelTextForVersion(sourceText, sourceManifest.segmentationVersion).length;
 }
 
 function sha256Hex(bytes: Uint8Array): string {

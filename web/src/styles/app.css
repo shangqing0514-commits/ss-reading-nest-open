@@ -253,6 +253,21 @@ input:focus, textarea:focus { border-color: var(--peach-strong); box-shadow: 0 0
   resize: vertical;
   line-height: 1.65;
 }
+.novel-source-field { display: grid; gap: 7px; }
+.novel-source-field > label { font-size: 13px; font-weight: 700; }
+.source-import-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.setup-shell .source-import-button {
+  display: inline-flex;
+  width: fit-content;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+.source-import-button input { display: none; }
+.source-import-row span { color: var(--muted); font-size: 12px; }
 .file-drop {
   display: grid;
   place-items: center;

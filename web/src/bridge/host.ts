@@ -93,16 +93,16 @@ export async function updateModelContext(context: Record<string, unknown>): Prom
 }
 
 export async function requestReaderFullscreen(): Promise<boolean> {
-  const bridge = connectApp();
   try {
+    if (window.openai?.requestDisplayMode) {
+      await window.openai.requestDisplayMode({ mode: "fullscreen" });
+      return true;
+    }
+    const bridge = connectApp();
     if (bridge) {
       await appReady;
       const result = await bridge.requestDisplayMode({ mode: "fullscreen" });
       return result.mode === "fullscreen";
-    }
-    if (window.openai?.requestDisplayMode) {
-      await window.openai.requestDisplayMode({ mode: "fullscreen" });
-      return true;
     }
   } catch {
     return false;
@@ -111,16 +111,16 @@ export async function requestReaderFullscreen(): Promise<boolean> {
 }
 
 export async function requestReaderInline(): Promise<boolean> {
-  const bridge = connectApp();
   try {
+    if (window.openai?.requestDisplayMode) {
+      await window.openai.requestDisplayMode({ mode: "inline" });
+      return true;
+    }
+    const bridge = connectApp();
     if (bridge) {
       await appReady;
       const result = await bridge.requestDisplayMode({ mode: "inline" });
       return result.mode === "inline";
-    }
-    if (window.openai?.requestDisplayMode) {
-      await window.openai.requestDisplayMode({ mode: "inline" });
-      return true;
     }
   } catch {
     return false;

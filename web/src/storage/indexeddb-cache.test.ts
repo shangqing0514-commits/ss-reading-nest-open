@@ -63,7 +63,7 @@ describe("IndexedDbReadingCache", () => {
 
     expect(restored?.metadata.sourceManifest).toMatchObject({
       sourceKind: "pasted_text",
-      paragraphCount: 2,
+      paragraphCount: 1,
       segmentationVersion: NOVEL_SEGMENTATION_VERSION
     });
   });

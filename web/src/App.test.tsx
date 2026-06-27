@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { MangaLocalCache, NovelLocalCache, SessionBundle, SourceManifest } from "@ss/shared";
 import { App } from "./App.js";
@@ -33,6 +33,77 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: /小说共读/ }));
     expect(screen.getByLabelText("作品名")).toBeInTheDocument();
     expect(screen.queryByText(/API key/i)).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["txt", "海边来信.txt", "第一段。\n\n第二段。"],
+    ["Markdown", "雨夜书店.md", "# 第一章\n\n故事开始了。"]
+  ])("imports a %s novel file into the existing title and body fields", async (_kind, name, content) => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: /小说共读/ }));
+
+    fireEvent.change(screen.getByLabelText("上传 TXT / Markdown"), {
+      target: { files: [new File([content], name, { type: "text/plain" })] }
+    });
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("作品名")).toHaveValue(name.replace(/\.[^.]+$/, ""));
+      expect(screen.getByLabelText("小说正文")).toHaveValue(content);
+    });
+  });
+
+  it("keeps a title the user entered before importing a novel file", async () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: /小说共读/ }));
+    fireEvent.change(screen.getByLabelText("作品名"), { target: { value: "我的标题" } });
+
+    fireEvent.change(screen.getByLabelText("上传 TXT / Markdown"), {
+      target: { files: [new File(["正文内容。"], "文件标题.markdown", { type: "text/markdown" })] }
+    });
+
+    await waitFor(() => {
+      expect(screen.getByLabelText("作品名")).toHaveValue("我的标题");
+      expect(screen.getByLabelText("小说正文")).toHaveValue("正文内容。");
+    });
+  });
+
+  it("rejects unsupported novel file formats", async () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: /小说共读/ }));
+
+    fireEvent.change(screen.getByLabelText("上传 TXT / Markdown"), {
+      target: { files: [new File(["内容"], "小说.pdf", { type: "application/pdf" })] }
+    });
+
+    expect(await screen.findByText("目前只支持 TXT / Markdown 文档。")).toBeInTheDocument();
+    expect(screen.getByLabelText("小说正文")).toHaveValue("");
+  });
+
+  it("accepts novel files between 2 and 5 MiB", async () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: /小说共读/ }));
+    const content = "x".repeat(2 * 1024 * 1024 + 1);
+
+    fireEvent.change(screen.getByLabelText("上传 TXT / Markdown"), {
+      target: { files: [new File([content], "长篇.txt", { type: "text/plain" })] }
+    });
+
+    expect(await screen.findByText("文档已导入，你仍然可以继续编辑正文。")).toBeInTheDocument();
+    expect(screen.getByLabelText("作品名")).toHaveValue("长篇");
+  });
+
+  it("rejects novel files larger than 5 MiB", async () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole("button", { name: /小说共读/ }));
+
+    fireEvent.change(screen.getByLabelText("上传 TXT / Markdown"), {
+      target: {
+        files: [new File([new Uint8Array(5 * 1024 * 1024 + 1)], "太长了.txt", { type: "text/plain" })]
+      }
+    });
+
+    expect(await screen.findByText("文档超过 5 MB，请拆分后再导入。")).toBeInTheDocument();
+    expect(screen.getByLabelText("小说正文")).toHaveValue("");
   });
 
   it("includes the current paragraph in the follow-up when model-context sync is unavailable", async () => {
@@ -424,7 +495,7 @@ describe("App", () => {
     fireEvent.change(screen.getByLabelText("作品名"), { target: { value: "长篇测试" } });
     fireEvent.change(screen.getByPlaceholderText("粘贴 TXT 或 Markdown 文本"), {
       target: {
-        value: Array.from({ length: 28 }, (_, index) => `第 ${index + 1} 段内容`).join("\n\n")
+        value: Array.from({ length: 28 }, (_, index) => `第 ${index + 1} 章\n内容`).join("\n\n")
       }
     });
     fireEvent.click(screen.getByRole("button", { name: "进入阅读小窝" }));
@@ -1083,7 +1154,7 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: /小说共读/ }));
     fireEvent.change(screen.getByLabelText("作品名"), { target: { value: "陪读 Dock 测试" } });
     fireEvent.change(screen.getByPlaceholderText("粘贴 TXT 或 Markdown 文本"), {
-      target: { value: "第一段。\n\n第二段。" }
+      target: { value: `第一段。${"甲".repeat(1_800)}\n\n第二段。${"乙".repeat(1_800)}` }
     });
     fireEvent.click(screen.getByRole("button", { name: "进入阅读小窝" }));
 
@@ -1570,6 +1641,66 @@ describe("App", () => {
     await deviceCache.remove("cloud-restore-session");
   });
 
+  it("restores a legacy v2 cloud novel with its original reading-unit indexes", async () => {
+    const deviceCache = new IndexedDbReadingCache();
+    await deviceCache.remove("legacy-cloud-restore-session");
+    const sourceText = "旧版第一段。\n\n旧版第二段。";
+    const currentManifest = await createNovelSourceManifest({
+      sourceId: "legacy-cloud-restore-source",
+      sourceKind: "pasted_text",
+      title: "旧版云端书",
+      sourceText
+    });
+    const legacyManifest = withCloudSync(
+      {
+        ...currentManifest,
+        segmentationVersion: 2,
+        paragraphCount: 2
+      },
+      "legacy-cloud-restore-source"
+    );
+    const bundle = bookshelfBundle(
+      "legacy-cloud-restore-session",
+      "旧版云端书",
+      2,
+      "light_chat",
+      legacyManifest
+    );
+    const fetchMock = vi.fn(async () =>
+      jsonResponse({ sourceText, sourceManifest: legacyManifest })
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const callTool = vi.fn(async (name: string) => {
+      if (name === "list_companion_comments") return { structuredContent: { comments: [] } };
+      return { structuredContent: {} };
+    });
+    Object.defineProperty(window, "openai", {
+      configurable: true,
+      value: {
+        toolOutput: { bookshelfSessions: [bundle], sourceEndpointBase: "/source/secret" },
+        callTool,
+        requestDisplayMode: vi.fn(),
+        setWidgetState: vi.fn()
+      }
+    });
+
+    render(<App />);
+
+    expect(await screen.findByText("当前设备可读")).toBeInTheDocument();
+    expect(await deviceCache.get("legacy-cloud-restore-session")).toMatchObject({
+      chunks: ["旧版第一段。", "旧版第二段。"],
+      metadata: {
+        sourceManifest: expect.objectContaining({
+          segmentationVersion: 2,
+          paragraphCount: 2
+        })
+      }
+    });
+    expect(callTool).not.toHaveBeenCalledWith("set_source_manifest", expect.anything());
+    expect(JSON.stringify(callTool.mock.calls)).not.toContain(sourceText);
+    await deviceCache.remove("legacy-cloud-restore-session");
+  });
+
   it("shows restore failure without changing reading records or writing failed source text", async () => {
     const deviceCache = new IndexedDbReadingCache();
     await deviceCache.remove("cloud-fail-session");
@@ -1647,6 +1778,92 @@ describe("App", () => {
     expect(screen.queryByText(/必须重新导入正文/)).not.toBeInTheDocument();
     thirdRender.unmount();
     await deviceCache.remove("ipad-cloud-session");
+  });
+
+  it("preserves fullscreen intent across the host remount caused by the first tap", async () => {
+    const deviceCache = new IndexedDbReadingCache();
+    const sessionId = "reader-route-session";
+    const sourceText = "第一段。\n\n第二段。\n\n第三段。";
+    const sourceManifest = await createNovelSourceManifest({
+      sourceId: "reader-route-source",
+      sourceKind: "pasted_text",
+      title: "阅读路由测试",
+      sourceText
+    });
+    await deviceCache.put(
+      novelCache(sessionId, "阅读路由测试", sourceManifest, ["第一段。", "第二段。", "第三段。"])
+    );
+    const bundle = bookshelfBundle(sessionId, "阅读路由测试", 3, "light_chat", sourceManifest);
+    let widgetState: ReaderWidgetState = {
+      screen: "novel",
+      sessionId,
+      positionIndex: 3,
+      scrollTop: 120
+    };
+    const setWidgetState = vi.fn((next: ReaderWidgetState) => {
+      widgetState = next;
+      if (window.openai) window.openai.widgetState = next;
+    });
+    const requestDisplayMode = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(window, "openai", {
+      configurable: true,
+      value: {
+        toolOutput: { bookshelfSessions: [bundle] },
+        widgetState,
+        callTool: vi.fn(async (name: string) => {
+          if (name === "list_companion_comments") {
+            return { structuredContent: { comments: [] } };
+          }
+          return { structuredContent: {} };
+        }),
+        requestDisplayMode,
+        setWidgetState
+      }
+    });
+
+    render(<App />);
+
+    expect(await screen.findByText("第三段。")).toBeInTheDocument();
+    expect(setWidgetState).not.toHaveBeenCalledWith(expect.objectContaining({ screen: "home" }));
+
+    fireEvent.click(screen.getByRole("button", { name: "全屏阅读" }));
+
+    await waitFor(() => {
+      expect(requestDisplayMode).toHaveBeenCalledWith({ mode: "fullscreen" });
+      expect(setWidgetState).toHaveBeenCalledWith(
+        expect.objectContaining({ screen: "novel", sessionId, positionIndex: 3, immersive: true })
+      );
+    });
+    const fullscreenStateCall = setWidgetState.mock.calls.findIndex(
+      ([state]) => state.immersive === true
+    );
+    expect(setWidgetState.mock.invocationCallOrder[fullscreenStateCall]).toBeLessThan(
+      requestDisplayMode.mock.invocationCallOrder.at(-1)!
+    );
+
+    cleanup();
+    if (window.openai) window.openai.widgetState = widgetState;
+    render(<App />);
+
+    expect(await screen.findByText("第三段。")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "退出全屏" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "退出全屏" }));
+    await waitFor(() => {
+      expect(requestDisplayMode).toHaveBeenCalledWith({ mode: "inline" });
+      expect(screen.getByRole("button", { name: "全屏阅读" })).toBeInTheDocument();
+    });
+
+    requestDisplayMode.mockRejectedValueOnce(new Error("host rejected fullscreen"));
+    fireEvent.click(screen.getByRole("button", { name: "全屏阅读" }));
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "全屏阅读" })).toBeInTheDocument();
+      expect(setWidgetState).toHaveBeenLastCalledWith(
+        expect.objectContaining({ screen: "novel", sessionId, immersive: false })
+      );
+    });
+
+    await deviceCache.remove(sessionId);
   });
 
   it("uploads new manga through the app bridge and stores returned metadata in IndexedDB", async () => {

@@ -8,6 +8,7 @@ declare global {
     sessionId?: string;
     positionIndex?: number;
     scrollTop?: number;
+    immersive?: boolean;
   }
 
   interface Window {

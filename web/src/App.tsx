@@ -35,7 +35,7 @@ import { SyncChoiceSheet } from "./components/SyncChoiceSheet.js";
 import { SyncProgressSheet } from "./components/SyncProgressSheet.js";
 import type { PendingCompanionCommentDraft } from "./components/CompanionDock.js";
 import { prepareCurrentPageContext } from "./features/manga/image-sync.js";
-import { splitNovelText } from "./features/novel/split-text.js";
+import { splitNovelText, splitNovelTextForVersion } from "./features/novel/split-text.js";
 import { CloudSourceClient } from "./features/source-cloud/cloud-source-client.js";
 import type { CloudUploadDiagnostics } from "./features/source-cloud/cloud-source-client.js";
 import { getSourceAvailability } from "./features/source-identity/source-availability.js";
@@ -81,6 +81,7 @@ type OpenOutput = {
 
 const cache = new IndexedDbReadingCache();
 const DEEP_ANALYSIS_DOCK_TEXT = "已生成长评，可回聊天区查看。";
+const MAX_NOVEL_FILE_SIZE = 5 * 1024 * 1024;
 
 export function App() {
   const initial = initialToolOutput<OpenOutput>();
@@ -89,7 +90,11 @@ export function App() {
     [initial?.sourceEndpointBase]
   );
   const [restoredWidgetState] = useState(() => initialWidgetState());
-  const [screen, setScreen] = useState<Screen>("home");
+  const [screen, setScreen] = useState<Screen>(() =>
+    restoredWidgetState?.screen === "novel" || restoredWidgetState?.screen === "manga"
+      ? restoredWidgetState.screen
+      : "home"
+  );
   const [setupType, setSetupType] = useState<ReadingType>("novel");
   const [existingSession, setExistingSession] = useState<ReadingSession | null>(null);
   const [title, setTitle] = useState("");
@@ -121,7 +126,9 @@ export function App() {
     useState<PendingCompanionCommentDraft | null>(null);
   const [pendingCommentSaving, setPendingCommentSaving] = useState(false);
   const [manualSaveRevision, setManualSaveRevision] = useState(0);
-  const [readerImmersive, setReaderImmersive] = useState(false);
+  const [readerImmersive, setReaderImmersive] = useState(
+    restoredWidgetState?.immersive ?? false
+  );
   const [syncRequestInFlight, setSyncRequestInFlight] = useState(false);
   const [managedBook, setManagedBook] = useState<BookshelfItem | null>(null);
   const [historyComments, setHistoryComments] = useState<CompanionComment[]>([]);
@@ -253,16 +260,14 @@ export function App() {
           try {
             if (session.type === "novel") {
               const restored = await cloudSourceClient.restoreNovelSource({ sessionId: session.id });
-              const restoredChunks = splitNovelText(restored.sourceText);
-              const localManifest = await createNovelSourceManifest({
-                sourceId: restored.sourceManifest.sourceId,
-                sourceKind:
-                  restored.sourceManifest.sourceKind === "file_import"
-                    ? "file_import"
-                    : "pasted_text",
-                title: restored.sourceManifest.title ?? session.title,
-                sourceText: restored.sourceText
-              });
+              const restoredChunks = splitNovelTextForVersion(
+                restored.sourceText,
+                restored.sourceManifest.segmentationVersion
+              );
+              const localManifest = {
+                ...restored.sourceManifest,
+                paragraphCount: restoredChunks.length
+              };
               const restoredAvailability = getSourceAvailability(
                 restored.sourceManifest,
                 localManifest
@@ -345,13 +350,16 @@ export function App() {
   const position = sessionBundle?.session.userCurrentPosition;
 
   useEffect(() => {
+    if ((screen === "novel" || screen === "manga") && !sessionBundle) return;
     saveReaderWidgetState({
       screen,
       ...(sessionBundle ? { sessionId: sessionBundle.session.id } : {}),
       ...(position ? { positionIndex: position.index } : {}),
-      ...(screen === "novel" || screen === "manga" ? { scrollTop: readerScrollTop } : {})
+      ...(screen === "novel" || screen === "manga"
+        ? { scrollTop: readerScrollTop, immersive: readerImmersive }
+        : {})
     });
-  }, [screen, sessionBundle?.session.id, position?.index, readerScrollTop]);
+  }, [screen, sessionBundle?.session.id, position?.index, readerScrollTop, readerImmersive]);
 
   function begin(type: ReadingType) {
     setSessionBundle(null);
@@ -443,14 +451,28 @@ export function App() {
   }
 
   async function openFullscreenReader() {
+    if (!sessionBundle || !position) return;
+    const saveFullscreenIntent = (immersive: boolean) =>
+      saveReaderWidgetState({
+        screen,
+        sessionId: sessionBundle.session.id,
+        positionIndex: position.index,
+        scrollTop: readerScrollTop,
+        immersive
+      });
     if (readerImmersive) {
+      saveFullscreenIntent(false);
       setReaderImmersive(false);
+      await requestReaderInline();
       return;
     }
+    saveFullscreenIntent(true);
     setReaderImmersive(true);
     const supported = await requestReaderFullscreen();
     if (!supported) {
-      setToast("已进入沉浸阅读模式；当前环境暂不支持系统全屏。");
+      saveFullscreenIntent(false);
+      setReaderImmersive(false);
+      setToast("无法进入全屏阅读，请重试。");
     }
   }
 
@@ -610,6 +632,31 @@ export function App() {
     setSessionBundle((current) =>
       current?.session.id === session.id ? { ...current, session } : current
     );
+  }
+
+  function importNovelFile(file: File | undefined) {
+    if (!file) return;
+    if (!/\.(txt|md|markdown)$/i.test(file.name)) {
+      setToast("目前只支持 TXT / Markdown 文档。");
+      return;
+    }
+    if (file.size > MAX_NOVEL_FILE_SIZE) {
+      setToast("文档超过 5 MB，请拆分后再导入。");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result !== "string") {
+        setToast("读取失败，请确认文件是 UTF-8 文本，或改用复制粘贴。");
+        return;
+      }
+      setSourceText(reader.result);
+      setTitle((current) => current.trim() || file.name.replace(/\.(txt|md|markdown)$/i, ""));
+      setToast("文档已导入，你仍然可以继续编辑正文。");
+    };
+    reader.onerror = () => setToast("读取失败，请确认文件是 UTF-8 文本，或改用复制粘贴。");
+    reader.readAsText(file, "UTF-8");
   }
 
   async function startReading() {
@@ -1745,7 +1792,25 @@ export function App() {
           <p>{existingSession ? `继续《${existingSession.title}》` : "准备好内容，我们就一起开始。"}</p>
           <label>作品名<input aria-label="作品名" value={title} onChange={(e) => setTitle(e.target.value)} /></label>
           {setupType === "novel" ? (
-            <label>小说正文<textarea className="source-input" value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder="粘贴 TXT 或 Markdown 文本" /></label>
+            <div className="novel-source-field">
+              <label htmlFor="novel-source-text">小说正文</label>
+              <textarea id="novel-source-text" className="source-input" value={sourceText} onChange={(e) => setSourceText(e.target.value)} placeholder="粘贴 TXT 或 Markdown 文本" />
+              <div className="source-import-row">
+                <label className="source-import-button">
+                  上传 TXT / Markdown
+                  <input
+                    aria-label="上传 TXT / Markdown"
+                    type="file"
+                    accept=".txt,.md,.markdown,text/plain,text/markdown"
+                    onChange={(event) => {
+                      importNovelFile(event.target.files?.[0]);
+                      event.target.value = "";
+                    }}
+                  />
+                </label>
+                <span>目前支持 TXT / Markdown，更多格式后续支持。</span>
+              </div>
+            </div>
           ) : (
             <label className="file-drop">导入漫画图片<input type="file" accept="image/*" multiple onChange={(e) => setSelectedFiles(Array.from(e.target.files ?? []))} /><span>{selectedFiles.length ? `已选择 ${selectedFiles.length} 张` : "点击选择多张图片"}</span></label>
           )}

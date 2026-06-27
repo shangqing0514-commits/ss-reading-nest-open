@@ -26,7 +26,7 @@ describe("CloudSourceService", () => {
       sourceKind: "pasted_text",
       title: "测试书",
       segmentationVersion: NOVEL_SEGMENTATION_VERSION,
-      paragraphCount: 2,
+      paragraphCount: 1,
       cloudSync: {
         enabled: true,
         provider: "r2",
@@ -47,7 +47,7 @@ describe("CloudSourceService", () => {
     expect(JSON.parse(new TextDecoder().decode(manifestObject.bytes))).toMatchObject({
       sourceId: result.sourceManifest.sourceId,
       contentHash: result.sourceManifest.contentHash,
-      paragraphCount: 2
+      paragraphCount: 1
     });
 
     const stored = JSON.stringify(await repository.read());
@@ -82,7 +82,7 @@ describe("CloudSourceService", () => {
 
     expect(restored.sourceText).toBe("第一段\n\n第二段");
     expect(restored.sourceManifest.contentHash).toBe(uploaded.sourceManifest.contentHash);
-    expect(restored.sourceManifest.paragraphCount).toBe(2);
+    expect(restored.sourceManifest.paragraphCount).toBe(1);
   });
 
   it("fails restore when cloud sync is disabled, source object is missing, or content mismatches", async () => {

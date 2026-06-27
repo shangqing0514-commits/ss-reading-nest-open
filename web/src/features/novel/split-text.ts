@@ -1,1 +1,1 @@
-export { splitNovelText } from "@ss/shared";
+export { splitNovelText, splitNovelTextForVersion } from "@ss/shared";

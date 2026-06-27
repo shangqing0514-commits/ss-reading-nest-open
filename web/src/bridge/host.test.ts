@@ -67,6 +67,18 @@ describe("host bridge", () => {
     });
   });
 
+  it("starts the direct ChatGPT fullscreen request in the user gesture call stack", async () => {
+    const requestDisplayMode = vi.fn().mockResolvedValue(undefined);
+    if (window.openai) window.openai.requestDisplayMode = requestDisplayMode;
+    const { requestReaderFullscreen } = await import("./host.js");
+
+    const result = requestReaderFullscreen();
+
+    expect(requestDisplayMode).toHaveBeenCalledWith({ mode: "fullscreen" });
+    expect(bridge.requestDisplayMode).not.toHaveBeenCalled();
+    await expect(result).resolves.toBe(true);
+  });
+
   it("stores and restores only lightweight reader widget state", async () => {
     const { initialWidgetState, saveReaderWidgetState } = await import("./host.js");
     const state = {
