@@ -1,0 +1,35 @@
+{
+  "name": "@ss/server",
+  "version": "0.2.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx watch src/index.ts",
+    "dev:cloud": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "deploy:dry": "wrangler deploy --dry-run",
+    "cf-types": "wrangler types",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/ext-apps": "1.7.4",
+    "@modelcontextprotocol/sdk": "1.29.0",
+    "@ss/shared": "workspace:*",
+    "agents": "^0.16.2",
+    "express": "^5.2.1",
+    "zod": "^4.2.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260621.1",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.5.0",
+    "@types/supertest": "^6.0.3",
+    "supertest": "^7.2.2",
+    "tsx": "^4.21.0",
+    "vitest": "4.1.9",
+    "wrangler": "^4.103.0"
+  }
+}

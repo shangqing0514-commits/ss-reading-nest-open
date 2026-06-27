@@ -1,0 +1,53 @@
+node_modules/
+dist/
+coverage/
+data/sessions.json
+data/*.tmp
+.superpowers/
+.tmp/
+outputs/
+.env*
+!.env.example
+.wrangler/
+server/.dev.vars*
+.tools/
+
+# Local secrets and Cloudflare credentials
+.dev.vars
+.dev.vars.*
+*.local
+*.secret
+*.secrets
+*MCP_PATH_TOKEN*
+*OPENAI_API_KEY*
+*CLOUDFLARE_API_TOKEN*
+
+# Runtime/build artifacts
+server/dist/
+web/dist/
+shared/dist/
+server/.wrangler/
+web/.wrangler/
+.mf/
+*.log
+*.log.*
+
+# Local source/cache dumps and smoke artifacts
+data/
+!data/.gitkeep
+*.sqlite
+*.sqlite3
+*.db
+*.idb
+*.indexeddb
+*.blob
+server/.tmp/
+server/scripts/remote-smoke/output/
+server/scripts/remote-smoke/*.tmp
+
+# User-imported content and local screenshots
+uploads/
+user-content/
+screenshots/
+*.d1
+*.r2
