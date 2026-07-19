@@ -17,12 +17,6 @@
       "migrations_dir": "./migrations"
     }
   ],
-  "r2_buckets": [
-    {
-      "binding": "SOURCES_BUCKET",
-      "bucket_name": "ss-reading-nest-sources"
-    }
-  ],
   "rules": [
     {
       "type": "Text",

@@ -2,9 +2,6 @@ import { createMcpHandler } from "agents/mcp";
 import widgetHtml from "../../web/dist/index.html";
 import { createMcpServerFromRepository } from "./mcp/server-factory.js";
 import { D1ReadingRepository } from "./repositories/d1-reading-repository.js";
-import { CloudSourceService } from "./services/cloud-source-service.js";
-import { handleSourceRoute } from "./source-routes.js";
-import { R2SourceObjectStorage } from "./storage/r2-source-object-storage.js";
 import { getWorkerRoute } from "./worker-router.js";
 
 export default {
@@ -19,19 +16,13 @@ export default {
       console.error(JSON.stringify({ message: "MCP_PATH_TOKEN is not configured" }));
       return new Response("Service unavailable", { status: 503 });
     }
-    if (route === "not-found") {
+    if (route === "not-found" || route === "source") {
       return new Response("Not found", { status: 404 });
     }
 
     try {
       const repository = new D1ReadingRepository(env.DB);
-      const sourceStorage = new R2SourceObjectStorage(env.SOURCES_BUCKET);
-      const sourceService = new CloudSourceService(repository, sourceStorage);
-      if (route === "source") {
-        return handleSourceRoute(request, sourceService);
-      }
-      const server = createMcpServerFromRepository(repository, widgetHtml, sourceService, {
-        sourceEndpointBase: `${url.origin}/source/${env.MCP_PATH_TOKEN}`,
+      const server = createMcpServerFromRepository(repository, widgetHtml, undefined, {
         workerOrigin: url.origin
       });
       return createMcpHandler(server, {
