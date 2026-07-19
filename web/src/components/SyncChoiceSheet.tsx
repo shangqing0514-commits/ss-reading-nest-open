@@ -11,7 +11,7 @@ export function SyncChoiceSheet(props: {
     <div className="sheet-backdrop">
       <section className="bottom-sheet sync-sheet" role="dialog" aria-modal="true">
         <h2>中间有较多剧情，要怎么同步？</h2>
-        <p>烁构还停在{props.assistantLabel}，你已经读到{props.userLabel}。</p>
+        <p>小叔叔还停在{props.assistantLabel}，你已经读到{props.userLabel}。</p>
         <button className="action-primary" onClick={props.onFull}>
           完整补课后再陪读（推荐）
         </button>

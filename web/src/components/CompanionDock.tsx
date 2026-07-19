@@ -65,7 +65,7 @@ export function CompanionDock(props: {
         data-testid="companion-dock"
       >
         <button type="button" className="companion-tab" onClick={() => setCollapsed(false)}>
-          烁构陪读
+          小叔叔陪读
         </button>
       </aside>
     );
@@ -87,11 +87,11 @@ export function CompanionDock(props: {
     <aside
       className={`companion-dock companion-dock-${props.layout}${expanded ? " expanded" : ""}${draftOpen ? " draft-open" : ""}`}
       data-testid="companion-dock"
-      aria-label="烁构陪读短评"
+      aria-label="小叔叔陪读短评"
     >
       <header className="companion-dock-header">
         <div>
-          <strong>烁构陪读</strong>
+          <strong>小叔叔陪读</strong>
           <span>最近短评</span>
         </div>
         <div className="companion-dock-controls">
@@ -105,10 +105,10 @@ export function CompanionDock(props: {
       </header>
 
       <div className="companion-comment-list">
-        {props.loading ? <p className="companion-empty">正在看看烁构留下了什么……</p> : null}
+        {props.loading ? <p className="companion-empty">正在看看小叔叔留下了什么……</p> : null}
         {!props.loading && props.error ? <p className="companion-empty">{props.error}</p> : null}
         {!props.loading && !props.error && visible.length === 0 ? (
-          <p className="companion-empty">烁构还没留下短评。</p>
+          <p className="companion-empty">小叔叔还没留下短评。</p>
         ) : null}
         {!props.loading && !props.error
           ? visible.map((comment) => (
@@ -136,7 +136,7 @@ export function CompanionDock(props: {
           <div className="pending-comment-save">
             {!draftOpen ? (
               <button type="button" onClick={() => setDraftOpen(true)}>
-                保存烁构短评
+                保存小叔叔短评
               </button>
             ) : (
               <form
@@ -156,7 +156,7 @@ export function CompanionDock(props: {
                   />
                 </label>
                 <button type="submit" disabled={!draftText.trim() || props.pendingCommentSaving}>
-                  {props.pendingCommentSaving ? "正在保存…" : "收入烁构短评"}
+                  {props.pendingCommentSaving ? "正在保存…" : "收入小叔叔短评"}
                 </button>
               </form>
             )}

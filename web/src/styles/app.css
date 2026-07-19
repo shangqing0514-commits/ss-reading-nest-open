@@ -435,14 +435,55 @@ input:focus, textarea:focus { border-color: var(--peach-strong); box-shadow: 0 0
 .novel-paper p { margin-bottom: 1.15em; }
 .page-buttons {
   display: grid;
-  grid-template-columns: minmax(96px, 1fr) auto minmax(96px, 1fr);
-  gap: 12px;
+  grid-template-columns: minmax(90px, 1fr) minmax(110px, 1.05fr) auto minmax(90px, 1fr);
+  gap: 10px;
   align-items: center;
   width: min(100%, 680px);
   margin: 16px auto 0;
 }
-.page-buttons button { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
-.page-buttons span { color: var(--muted); font-size: 12px; }
+.page-buttons button {
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.page-buttons .reader-jump-button { min-width: 110px; }
+.page-buttons span { justify-self: center; color: var(--muted); font-size: 12px; }
+.jump-sheet { display: grid; gap: 12px; }
+.jump-sheet-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.jump-sheet-header h2 { margin: 0; font-size: 20px; }
+.jump-sheet-header p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+.jump-sheet .text-button { display: inline-flex; margin: 0; padding: 0; color: var(--wood); font-weight: 800; }
+.jump-target-input { display: grid; gap: 6px; }
+.jump-target-input span { color: var(--muted); font-size: 12px; font-weight: 700; }
+.jump-target-input input[type="number"] { max-width: 160px; }
+.jump-sheet input[type="range"] { width: 100%; margin: 2px 0 0; accent-color: var(--wood); }
+.jump-actions { display: flex; justify-content: flex-end; }
+.jump-actions button { min-height: 44px; }
+.jump-chapter-list { display: grid; gap: 8px; }
+.jump-chapter-list h3 { margin: 0; font-size: 14px; }
+.jump-chapter-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 13px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  text-align: left;
+}
+.jump-chapter-item span { font-size: 13px; font-weight: 700; }
+.jump-chapter-item small { color: var(--muted); font-size: 11px; white-space: nowrap; }
+
+@media (max-width: 480px) {
+  .page-buttons {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .page-buttons .reader-jump-button { order: 2; }
+  .page-buttons span { grid-column: 1 / -1; order: 3; }
+}
 .reader-actions {
   z-index: 4;
   display: grid;

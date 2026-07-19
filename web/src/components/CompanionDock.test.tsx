@@ -141,8 +141,8 @@ describe("CompanionDock", () => {
     fireEvent.click(screen.getByRole("button", { name: /第 4 段.*第四段短评/ }));
     expect(onJump).toHaveBeenCalledWith(4);
     fireEvent.click(screen.getByRole("button", { name: "收起陪读 Dock" }));
-    expect(screen.getByRole("button", { name: "烁构陪读" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "烁构陪读" }));
+    expect(screen.getByRole("button", { name: "小叔叔陪读" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "小叔叔陪读" }));
     fireEvent.click(screen.getByRole("button", { name: "清除最近短评" }));
     expect(onClear).toHaveBeenCalledTimes(1);
 
@@ -155,7 +155,7 @@ describe("CompanionDock", () => {
         onJump={onJump}
       />
     );
-    expect(screen.getByText("烁构还没留下短评。")).toBeInTheDocument();
+    expect(screen.getByText("小叔叔还没留下短评。")) .toBeInTheDocument();
 
     rerender(
       <CompanionDock
@@ -221,11 +221,11 @@ describe("CompanionDock", () => {
       />
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "保存烁构短评" }));
+    fireEvent.click(screen.getByRole("button", { name: "保存小叔叔短评" }));
     fireEvent.change(screen.getByLabelText("短评内容"), {
       target: { value: "这句吐槽值得留下。" }
     });
-    fireEvent.click(screen.getByRole("button", { name: "收入烁构短评" }));
+    fireEvent.click(screen.getByRole("button", { name: "收入小叔叔短评" }));
 
     expect(onSavePendingComment).toHaveBeenCalledWith("这句吐槽值得留下。");
   });
@@ -250,11 +250,11 @@ describe("CompanionDock", () => {
       />
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "保存烁构短评" }));
+    fireEvent.click(screen.getByRole("button", { name: "保存小叔叔短评" }));
     fireEvent.change(screen.getByLabelText("短评内容"), {
       target: { value: "这条短评要收入小窝。" }
     });
-    fireEvent.click(screen.getByRole("button", { name: "收入烁构短评" }));
+    fireEvent.click(screen.getByRole("button", { name: "收入小叔叔短评" }));
 
     expect(onSavePendingComment).toHaveBeenCalledWith("这条短评要收入小窝。");
   });
@@ -278,11 +278,11 @@ describe("CompanionDock", () => {
       />
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "保存烁构短评" }));
+    fireEvent.click(screen.getByRole("button", { name: "保存小叔叔短评" }));
 
     expect(screen.getByTestId("companion-dock")).toHaveClass("draft-open");
     expect(screen.getByLabelText("短评内容")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "收入烁构短评" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "收入小叔叔短评" })).toBeInTheDocument();
   });
   it("keeps the draft panel open when a saved draft is replaced", () => {
     const { rerender } = render(
@@ -304,7 +304,7 @@ describe("CompanionDock", () => {
       />
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "保存烁构短评" }));
+    fireEvent.click(screen.getByRole("button", { name: "保存小叔叔短评" }));
     fireEvent.change(screen.getByLabelText("短评内容"), {
       target: { value: "刚贴进来的短评。" }
     });
@@ -330,7 +330,7 @@ describe("CompanionDock", () => {
 
     expect(screen.getByTestId("companion-dock")).toHaveClass("draft-open");
     expect(screen.getByLabelText("短评内容")).toHaveValue("");
-    expect(screen.getByRole("button", { name: "收入烁构短评" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "收入小叔叔短评" })).toBeInTheDocument();
   });
   it("does not close the draft panel when the host layout revision changes", () => {
     const draft = {
@@ -354,7 +354,7 @@ describe("CompanionDock", () => {
       />
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "保存烁构短评" }));
+    fireEvent.click(screen.getByRole("button", { name: "保存小叔叔短评" }));
     fireEvent.change(screen.getByLabelText("短评内容"), {
       target: { value: "布局刷新时别关。" }
     });

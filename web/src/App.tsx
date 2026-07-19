@@ -540,7 +540,7 @@ export function App() {
         result.structuredContent?.nextCursor as string | undefined
       );
     } catch {
-      setToast("烁构评论历史暂时没有读取成功。");
+      setToast("小叔叔评论历史暂时没有读取成功。");
     } finally {
       setHistoryLoading(false);
     }
@@ -1118,7 +1118,7 @@ export function App() {
       });
       setToast(
         mode === "context"
-          ? `已同步${sessionBundle.session.userCurrentPosition.label}，烁构正在看这里。`
+          ? `已同步${sessionBundle.session.userCurrentPosition.label}，小叔叔正在看这里。`
           : "已用兼容模式发送当前段落。"
       );
     } finally {
@@ -1132,7 +1132,7 @@ export function App() {
     const userIndex = sessionBundle.session.userCurrentPosition.index;
     const assistantIndex = sessionBundle.session.assistantSyncedPosition?.index ?? 0;
     if (userIndex <= assistantIndex) {
-      setToast("烁构已经看到这里啦，正在换个角度陪你看。");
+      setToast("小叔叔已经看到这里啦，正在换个角度陪你看。");
       await lookAtNovel(currentText, selectedText);
       return;
     }
@@ -1349,7 +1349,7 @@ export function App() {
       if (confirmed.mode === "live_reading") {
         clearSyncJobState();
         await cache.removeSyncJob(syncJob.sessionId).catch(() => undefined);
-        setToast(`已确认烁构读到第 ${batch.rangeEnd} 段。`);
+        setToast(`已确认小叔叔读到第 ${batch.rangeEnd} 段。`);
         return;
       }
       const formalMode = sessionBundle.session.sessionPreferences.readingCommentMode;
@@ -1390,7 +1390,7 @@ export function App() {
       });
       clearSyncJobState();
       await cache.removeSyncJob(syncJob.sessionId).catch(() => undefined);
-      setToast("烁构追上你啦，可以正式陪读了。");
+      setToast("小叔叔追上你啦，可以正式陪读了。");
       return;
     }
     storeSyncJob(confirmed);
@@ -2075,15 +2075,15 @@ export function App() {
           <label className="remember-row"><input type="checkbox" checked={remembered} onChange={(e) => setRemembered(e.target.checked)} />在本设备记住{setupType === "novel" ? "这本书" : "这部漫画"}</label>
           <p className="privacy-note">正文/图片只保存在本设备，用于下次继续阅读；服务器不会保存全文或漫画原图。</p>
           {existingSession ? (
-            <section className="setup-companion-summary" aria-label="烁构最近短评">
+            <section className="setup-companion-summary" aria-label="小叔叔最近短评">
               <div>
-                <strong>烁构最近短评</strong>
+                <strong>小叔叔最近短评</strong>
                 <span>重新导入正文后，陪读 Dock 会继续显示这些短评。</span>
               </div>
-              {companionLoading ? <p>正在看看烁构留下了什么……</p> : null}
+              {companionLoading ? <p>正在看看小叔叔留下了什么……</p> : null}
               {!companionLoading && companionError ? <p>{companionError}</p> : null}
               {!companionLoading && !companionError && companionComments.length === 0 ? (
-                <p>烁构还没留下短评。</p>
+                <p>小叔叔还没留下短评。</p>
               ) : null}
               {!companionLoading && !companionError
                 ? companionComments.slice(0, 3).map((comment) => (

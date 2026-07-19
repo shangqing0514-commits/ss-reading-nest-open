@@ -96,7 +96,7 @@ export function MangaReader(props: {
               <textarea value={props.description} onChange={(event) => props.onDescription(event.target.value)} placeholder="例如：这一页男主在哭" />
             </label>
             <label>
-              想和烁构说
+              想和小叔叔说
               <input value={props.note} onChange={(event) => props.onNote(event.target.value)} placeholder="写一句备注或吐槽" />
             </label>
           </div>

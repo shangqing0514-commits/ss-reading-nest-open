@@ -71,7 +71,7 @@ export function BookManagementSheet(props: {
             <button aria-pressed={tab === "bookmarks"} onClick={() => setTab("bookmarks")}>书签</button>
             <button aria-pressed={tab === "quotes"} onClick={() => setTab("quotes")}>摘录</button>
             <button aria-pressed={tab === "reactions"} onClick={() => setTab("reactions")}>用户反应</button>
-            <button aria-pressed={tab === "comments"} onClick={() => setTab("comments")}>烁构评论</button>
+            <button aria-pressed={tab === "comments"} onClick={() => setTab("comments")}>小叔叔评论</button>
           </div>
           <div className="record-list">
             {tab === "bookmarks"

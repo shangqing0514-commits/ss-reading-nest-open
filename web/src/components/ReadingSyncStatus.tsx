@@ -9,7 +9,7 @@ export function ReadingSyncStatus({ session }: { session: ReadingSession }) {
   return (
     <aside className="sync-status" aria-label="陪读同步状态">
       <span>用户读到：{user.label}</span>
-      <span>烁构确认读到：{assistant?.label ?? "尚未同步"}</span>
+      <span>小叔叔确认读到：{assistant?.label ?? "尚未同步"}</span>
       {hasGap ? (
         <span>
           待补课：第 {pendingStart}–{user.index} {user.kind === "page" ? "页" : "段"}

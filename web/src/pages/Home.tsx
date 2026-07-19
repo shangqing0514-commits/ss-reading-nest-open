@@ -144,7 +144,7 @@ function BookCard(props: {
       </div>
       <div className="book-progress">
         <span>用户：{item.session.userCurrentPosition.label}</span>
-        <span>烁构：{item.session.assistantSyncedPosition?.label ?? "尚未同步"}</span>
+        <span>小叔叔：{item.session.assistantSyncedPosition?.label ?? "尚未同步"}</span>
         <span>{MODE_LABELS[item.session.sessionPreferences.readingCommentMode]}</span>
       </div>
       <div className={`book-source ${item.sourceAvailability}`}>
@@ -152,7 +152,7 @@ function BookCard(props: {
         <span>{action.hint}</span>
       </div>
       <p className="book-comment">
-        {item.latestComment ? `烁构：${item.latestComment}` : "烁构还没留下短评。"}
+        {item.latestComment ? `小叔叔：${item.latestComment}` : "小叔叔还没留下短评。"}
       </p>
       <button
         type="button"
