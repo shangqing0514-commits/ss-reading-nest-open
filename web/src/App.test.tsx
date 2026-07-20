@@ -2074,6 +2074,15 @@ describe("App", () => {
     expect(screen.getByText("用户读到：第 3 段")).toBeInTheDocument();
     expect(callTool).not.toHaveBeenCalledWith("update_reading_position", expect.anything());
 
+    fireEvent.click(screen.getByRole("button", { name: "上一段" }));
+    expect(await screen.findByText("第二段。")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "今天看到这里" }));
+    fireEvent.click(
+      await screen.findByRole("button", { name: "继续阅读《阅读进度测试》" })
+    );
+    expect(await screen.findByText("第二段。")).toBeInTheDocument();
+    expect(screen.getByText("用户读到：第 2 段")).toBeInTheDocument();
+
     await deviceCache.remove(sessionId);
   });
 

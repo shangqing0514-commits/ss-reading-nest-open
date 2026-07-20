@@ -1063,13 +1063,10 @@ export function App() {
     if (!sessionBundle) return;
     setReaderScrollTop(0);
     const nextPosition = makePosition(sessionBundle.session.type, index, sessionBundle.session.type === "novel" ? chunks.length : mangaPages.length);
-    setSessionBundle({
-      ...sessionBundle,
-      session: {
-        ...sessionBundle.session,
-        userCurrentPosition: nextPosition,
-        updatedAt: new Date().toISOString()
-      }
+    updateBookshelfSession({
+      ...sessionBundle.session,
+      userCurrentPosition: nextPosition,
+      updatedAt: new Date().toISOString()
     });
     await callTool("update_reading_position", {
       sessionId: sessionBundle.session.id,
@@ -1939,12 +1936,16 @@ export function App() {
 
   async function finishToday() {
     if (!sessionBundle) return;
-    await callTool("finish_today_reading", {
+    const result = await callTool("finish_today_reading", {
       sessionId: sessionBundle.session.id,
       position: sessionBundle.session.userCurrentPosition,
       createBookmark: true,
       operationId: crypto.randomUUID()
     });
+    const savedSession = result.structuredContent?.session as ReadingSession | undefined;
+    const bookmark = result.structuredContent?.bookmark as any;
+    if (savedSession) updateBookshelfSession(savedSession);
+    if (bookmark) appendSessionRecord(sessionBundle.session.id, { bookmarks: [bookmark] });
     setToast(`今天看到${sessionBundle.session.userCurrentPosition.label}，下次继续。`);
     setScreen("home");
   }
