@@ -405,7 +405,7 @@ export function App() {
     setScreen("setup");
   }
 
-  async function continueReading(item: BookshelfItem) {
+  async function continueReading(item: BookshelfItem, restoredPositionIndex?: number) {
     let nextItem = item;
     const local = await cache.get(item.session.id).catch(() => undefined);
     if (local && !item.session.sourceManifest) {
@@ -418,6 +418,32 @@ export function App() {
         session: {
           ...item.session,
           sourceManifest: local.metadata.sourceManifest
+        }
+      };
+    }
+    if (
+      typeof restoredPositionIndex === "number" &&
+      Number.isFinite(restoredPositionIndex)
+    ) {
+      const total =
+        local && "chunks" in local
+          ? local.chunks.length
+          : local && "pages" in local
+            ? local.pages.length
+            : nextItem.session.type === "novel"
+              ? nextItem.session.sourceManifest?.paragraphCount ??
+                nextItem.session.userCurrentPosition.total
+              : nextItem.session.sourceManifest?.pageCount ??
+                nextItem.session.userCurrentPosition.total;
+      nextItem = {
+        ...nextItem,
+        session: {
+          ...nextItem.session,
+          userCurrentPosition: makePosition(
+            nextItem.session.type,
+            clampPositionIndex(restoredPositionIndex, total),
+            total
+          )
         }
       };
     }
@@ -2005,7 +2031,14 @@ export function App() {
     if (!item) return;
     restoreAttempted.current = true;
     setReaderScrollTop(restoredWidgetState.scrollTop ?? 0);
-    void continueReading(item);
+    const savedPositionIndex = restoredWidgetState.positionIndex;
+    const restoredPositionIndex =
+      restoredWidgetState.screen === item.session.type &&
+      typeof savedPositionIndex === "number" &&
+      Number.isFinite(savedPositionIndex)
+        ? savedPositionIndex
+        : undefined;
+    void continueReading(item, restoredPositionIndex);
   }, [recent, restoredWidgetState]);
 
   const usingLargeNovelPreview =
@@ -2399,6 +2432,11 @@ function makePosition(type: ReadingType, index: number, total?: number): Reading
     ...(total ? { total } : {}),
     label: type === "novel" ? `第 ${index} 段` : `第 ${index} 页`
   };
+}
+
+function clampPositionIndex(index: number, total?: number): number {
+  const normalized = Math.max(1, Math.trunc(index));
+  return typeof total === "number" && total > 0 ? Math.min(normalized, total) : normalized;
 }
 
 async function rememberNovel(

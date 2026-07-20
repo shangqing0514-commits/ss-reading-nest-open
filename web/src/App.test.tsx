@@ -2032,6 +2032,51 @@ describe("App", () => {
     await deviceCache.remove("ipad-cloud-session");
   });
 
+  it("restores the latest widget reading position when tool output is stale", async () => {
+    const deviceCache = new IndexedDbReadingCache();
+    const sessionId = "reader-progress-session";
+    const sourceText = "第一段。\n\n第二段。\n\n第三段。";
+    const sourceManifest = await createNovelSourceManifest({
+      sourceId: "reader-progress-source",
+      sourceKind: "pasted_text",
+      title: "阅读进度测试",
+      sourceText
+    });
+    await deviceCache.put(
+      novelCache(sessionId, "阅读进度测试", sourceManifest, ["第一段。", "第二段。", "第三段。"])
+    );
+    const staleBundle = bookshelfBundle(sessionId, "阅读进度测试", 1, "light_chat", sourceManifest);
+    const callTool = vi.fn(async (name: string) => {
+      if (name === "list_companion_comments") {
+        return { structuredContent: { comments: [] } };
+      }
+      return { structuredContent: {} };
+    });
+    Object.defineProperty(window, "openai", {
+      configurable: true,
+      value: {
+        toolOutput: { bookshelfSessions: [staleBundle] },
+        widgetState: {
+          screen: "novel",
+          sessionId,
+          positionIndex: 3,
+          scrollTop: 0
+        },
+        callTool,
+        requestDisplayMode: vi.fn(),
+        setWidgetState: vi.fn()
+      }
+    });
+
+    render(<App />);
+
+    expect(await screen.findByText("第三段。")).toBeInTheDocument();
+    expect(screen.getByText("用户读到：第 3 段")).toBeInTheDocument();
+    expect(callTool).not.toHaveBeenCalledWith("update_reading_position", expect.anything());
+
+    await deviceCache.remove(sessionId);
+  });
+
   it("preserves fullscreen intent across the host remount caused by the first tap", async () => {
     const deviceCache = new IndexedDbReadingCache();
     const sessionId = "reader-route-session";
